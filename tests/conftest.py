@@ -18,6 +18,7 @@ import trimesh
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MAIN = ROOT / "vesa_tray.scad"
+FIT_FIXTURE = ROOT / "tests" / "fixtures" / "vesa_fit.scad"
 OPENSCAD_BIN = os.environ.get("OPENSCAD_BIN", "openscad")
 
 # Tests run with coarse facets for speed; geometry validity is unaffected.
@@ -50,14 +51,16 @@ def _env() -> dict:
     return env
 
 
-def render(defines: dict | None = None, part: str = "tray", *, check: bool = True):
-    """Render a part to STL and return the CompletedProcess (and STL path).
+def render(defines: dict | None = None, part: str = "tray", *,
+           scad: pathlib.Path = MAIN, check: bool = True):
+    """Render a ``.scad`` to STL and return the CompletedProcess (and STL path).
 
     Returns ``(proc, stl_path)``. With ``check=False`` a failed render is
     returned rather than raised (used to assert that bad params are rejected).
     """
     defines = dict(defines or {})
-    defines.setdefault("Part", part)
+    if scad == MAIN:
+        defines.setdefault("Part", part)
     defines.setdefault("$fn", _TEST_FN)
 
     tmp = tempfile.NamedTemporaryFile(suffix=".stl", delete=False)
@@ -65,7 +68,7 @@ def render(defines: dict | None = None, part: str = "tray", *, check: bool = Tru
     args = [OPENSCAD_BIN, "-o", tmp.name, "--export-format=binstl"]
     for key, val in defines.items():
         args += ["-D", f"{key}={_fmt(val)}"]
-    args.append(str(MAIN))
+    args.append(str(scad))
 
     proc = subprocess.run(
         args, capture_output=True, text=True, env=_env(), check=False
@@ -75,6 +78,31 @@ def render(defines: dict | None = None, part: str = "tray", *, check: bool = Tru
             f"OpenSCAD render failed (rc={proc.returncode}):\n{proc.stderr}"
         )
     return proc, tmp.name
+
+
+def fit_collision_volume(defines: dict | None = None) -> float:
+    """Render the VESA-fit fixture and return the bolt/material collision volume.
+
+    The fixture intersects the tray with an M4 bolt array on a VESA pattern.
+    A correct fit yields an empty object (OpenSCAD: "object is empty") -> 0.0.
+    A mismatched pattern leaves a non-empty solid -> its volume in mm^3.
+    """
+    proc, stl = render(defines, scad=FIT_FIXTURE, check=False)
+    err = proc.stderr or ""
+    try:
+        if "ERROR" in err:
+            raise AssertionError(f"fit fixture render error:\n{err}")
+        if "object is empty" in err.lower():
+            return 0.0
+        mesh = trimesh.load(stl, force="mesh")
+        if mesh is None or len(getattr(mesh, "faces", [])) == 0:
+            return 0.0
+        return float(abs(mesh.volume))
+    finally:
+        try:
+            os.unlink(stl)
+        except OSError:
+            pass
 
 
 def load_mesh(defines: dict | None = None, part: str = "tray") -> trimesh.Trimesh:

@@ -67,6 +67,12 @@ geometry.
 the spec's acceptance criteria with trimesh. It **skips automatically** when
 OpenSCAD isn't installed. See `OPENSCAD_SETUP.md`.
 
+`test_vesa_fit.py` validates the actual mounting fit: it intersects the tray with
+an M4 bolt array on a VESA pattern (via `tests/fixtures/vesa_fit.scad`) and asserts
+the bolts clear the holes — for every pattern in `VESA_PATTERNS` (currently 75×75
+and 100×100), in both heat-set and through-bolt modes, with a misalignment
+negative control. Add a plate type by appending its spacing to `VESA_PATTERNS`.
+
 ## Printing intent
 
 - Body: PETG or PETG-CF, floor-down, 6 walls, 40%+ infill (solid around the
