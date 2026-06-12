@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  # Pinned for MakerWorld Parametric Model Maker parity — see OPENSCAD_SETUP.md.
+  OPENSCAD_SNAPSHOT: OpenSCAD-2026.01.14-x86_64.AppImage
+  BOSL2_COMMIT: 7e5dfe5275b23f1b568962e2e286f0630c0c9b57
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenSCAD snapshot
+        run: |
+          curl -fsSLO "https://files.openscad.org/snapshots/${OPENSCAD_SNAPSHOT}"
+          chmod +x "${OPENSCAD_SNAPSHOT}"
+          ./"${OPENSCAD_SNAPSHOT}" --appimage-extract > /dev/null
+          echo "OPENSCAD_BIN=${PWD}/squashfs-root/AppRun" >> "$GITHUB_ENV"
+
+      - name: Install BOSL2 (pinned)
+        run: |
+          mkdir -p .libs/BOSL2
+          git -C .libs/BOSL2 init -q
+          git -C .libs/BOSL2 fetch -q --depth 1 https://github.com/BelfrySCAD/BOSL2 "$BOSL2_COMMIT"
+          git -C .libs/BOSL2 checkout -q FETCH_HEAD
+          echo "OPENSCAD_LIBDIR=${PWD}/.libs" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: tests/requirements-dev.txt
+
+      - name: Install test dependencies
+        run: pip install -r tests/requirements-dev.txt
+
+      - name: Run tests
+        run: pytest -v

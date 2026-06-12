@@ -9,6 +9,10 @@
 // The bolts only reach as deep as a real fastener does: into the blind insert
 // pocket (heat-set mode) or all the way through the floor (through-bolt mode).
 
+// Entry point, so BOSL2's special-variable defaults must be set here (see
+// the note in vesa_tray.scad).
+include <BOSL2/std.scad>
+
 use <../../src/tray.scad>
 
 /* fixture knobs */

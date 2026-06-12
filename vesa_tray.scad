@@ -16,6 +16,11 @@
   License: MIT (see LICENSE).
 */
 
+// BOSL2 must be included at the entry point: its top-level special-variable
+// defaults ($tags_shown etc.) resolve through the caller's dynamic scope, and
+// OpenSCAD >= 2026 (MakerWorld's renderer) errors if they're missing here.
+include <BOSL2/std.scad>
+
 use <src/tray.scad>
 use <src/pads.scad>
 use <src/assembly.scad>
