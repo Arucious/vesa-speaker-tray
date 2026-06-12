@@ -1,0 +1,20 @@
+# Generated print outputs
+dist/
+*.stl
+*.3mf
+*.amf
+
+# OpenSCAD echo dumps
+*.echo
+
+# Local BOSL2 checkout (if vendored alongside for the test harness)
+.libs/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# macOS
+.DS_Store
