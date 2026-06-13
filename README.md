@@ -99,11 +99,44 @@ plate type by appending its spacing to `VESA_PATTERNS`.
 
 - Body: PETG (creep resistance), **plate rear face down on the bed** — the
   shelf prints as a vertical wall and the gussets as in-plane triangles
-  (hypotenuse ≈ 33° from vertical, no supports). 6 walls, 40–50% infill,
-  solid around the insert bosses, 0.2 mm layers.
+  (hypotenuse ≈ 45° from vertical, no supports), and the rim lands flat on the
+  bed. 0.2 mm layers, solid around the insert bosses (the walls handle this).
 - Pads: TPU 95A, ~10–20% gyroid, 2 perimeters, few/no top layers (95A is
   firm — the slicer supplies the compliance, not the geometry).
 - Tuned for a Bambu P1S, 0.4 mm nozzle; minimum feature thickness 1.6 mm.
+
+## Print strength (walls & infill)
+
+This is a cantilever holding a speaker, so the questions that matter are *will
+it break* and *will it sag over time (creep)*. Both come down to keeping the
+sustained stress well below PETG's creep threshold (~10 MPa). The good news:
+the deep gussets make the stresses tiny. At the 3.5 kg default the worst-case
+sustained stress is about **0.26 MPa** — ~40× below the creep threshold and
+~190× below yield — so even modest settings have enormous margin.
+
+Stress scales roughly linearly with speaker weight, so the recommendation just
+steps up gently with mass. The generator echoes the matching line for the
+weight you enter; the equation is in [`src/params.scad`](src/params.scad)
+(`recommended_walls` / `recommended_infill_pct`):
+
+```
+walls   = clamp(2 + ceil(kg / 2), 4, 8)
+infill% = clamp(5 + 5 * ceil(kg / 2), 15, 40)   // gyroid
+```
+
+| Speaker weight | Walls | Infill (gyroid) |
+|---|---|---|
+| ≤ 4 kg | 4 | 15% |
+| 4.5–6 kg | 5 | 20% |
+| 6.5–8 kg | 6 | 25% |
+| 8.5–10 kg | 7 | 30% |
+| 10.5–12 kg | 8 | 35% |
+| > 12 kg | 8 | 40% |
+
+These are deliberately conservative — walls matter far more than infill for a
+part like this, so the table adds walls before density. **Always: PETG, printed
+plate-rear-face down, gyroid infill.** Keep the bracket out of sustained heat
+above ~60 °C (where PETG creep accelerates); a desk near electronics is fine.
 
 ## License
 

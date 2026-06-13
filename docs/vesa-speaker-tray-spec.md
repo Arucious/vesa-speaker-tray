@@ -69,8 +69,8 @@ remains the design driver.
 | `speaker_d` | 207 | Cabinet depth |
 | `speaker_h` | 237 | Cabinet height (assembly ghost + strap sizing only) |
 | `cabinet_clearance` | 0.5 | Gap between cabinet and lip/rails faces |
-| `shelf_w` | 160 | Shelf width (must clear the cabinet + side rails) |
-| `shelf_d` | 216 | Shelf depth. Supports the full cabinet so the rear heel contacts it |
+| `shelf_w` | 0 = auto | Shelf width; auto = `speaker_w + 2·clearance + 2·rail_t + 6` |
+| `shelf_d` | 0 = auto | Shelf depth; auto = `speaker_d + 2·clearance + 2·rail_t` (full support) |
 | `shelf_t` | 7 | Shelf thickness (6–8) |
 | `lip_h` | 6 | **Effective** lip height above the pad top (5–8) |
 | `lip_t` | 4 | Lip thickness |

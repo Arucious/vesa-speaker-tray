@@ -83,3 +83,18 @@ function insert_pocket_blind(fastening, insert_depth, plate_t, insert_boss_h) =
 function rails_fit(retention_style, speaker_w, cabinet_clearance, rail_t, shelf_w) =
     retention_style != "rails"
     || speaker_w / 2 + cabinet_clearance + rail_t <= shelf_w / 2 + 1e-3;
+
+// ---- auto-sized shelf (0 = derive from the speaker) -----------------------------
+// Shelf depth that fully supports the cabinet so the rear heel contacts it.
+function auto_shelf_d(shelf_d, speaker_d, cabinet_clearance, rail_t) =
+    shelf_d > 0 ? shelf_d : speaker_d + 2 * cabinet_clearance + 2 * rail_t;
+// Shelf width: cabinet + clearance + rim wall + a 3mm border each side.
+function auto_shelf_w(shelf_w, speaker_w, cabinet_clearance, rail_t) =
+    shelf_w > 0 ? shelf_w : speaker_w + 2 * cabinet_clearance + 2 * rail_t + 6;
+
+// ---- print-setting recommendations (informational; echoed by the entry file) ----
+// Bending stress scales ~linearly with speaker weight; even these deliberately
+// conservative values keep PETG far below its creep threshold (see README,
+// "Print strength"). Returned as plain numbers for echo / display.
+function recommended_walls(weight_kg) = max(4, min(8, 2 + ceil(weight_kg / 2)));
+function recommended_infill_pct(weight_kg) = max(15, min(40, 5 + 5 * ceil(weight_kg / 2)));

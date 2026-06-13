@@ -29,6 +29,25 @@ def test_vesa75_speaker120_valid():
 
 
 @requires_openscad
+def test_auto_shelf_tracks_speaker():
+    # Generator contract: setting only the speaker size auto-sizes the shelf so
+    # the part stays valid and the envelope grows with the speaker.
+    small = load_mesh({"speaker_w": 120, "speaker_d": 170}, part="bracket")
+    big = load_mesh({"speaker_w": 190, "speaker_d": 270}, part="bracket")
+    assert small.is_watertight and big.is_watertight
+    # auto shelf_d = speaker_d + 2*clearance + 2*rail_t = speaker_d + 9
+    assert abs((big.bounds[1][1] - big.bounds[0][1]) - (270 + 9)) < 0.3
+    assert abs((small.bounds[1][1] - small.bounds[0][1]) - (170 + 9)) < 0.3
+
+
+@requires_openscad
+def test_print_recommendation_echoed():
+    # The entry file echoes a weight-driven print-setting hint.
+    proc, _ = render({"speaker_weight_kg": 3.5}, part="bracket", check=False)
+    assert "4 walls" in proc.stderr and "15% gyroid" in proc.stderr, proc.stderr
+
+
+@requires_openscad
 def test_through_fastening_watertight():
     mesh = load_mesh({"fastening": "through"}, part="bracket")
     assert mesh.is_watertight
