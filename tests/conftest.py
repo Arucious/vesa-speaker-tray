@@ -51,7 +51,7 @@ def _env() -> dict:
     return env
 
 
-def render(defines: dict | None = None, part: str = "tray", *,
+def render(defines: dict | None = None, part: str = "bracket", *,
            scad: pathlib.Path = MAIN, check: bool = True):
     """Render a ``.scad`` to STL and return the CompletedProcess (and STL path).
 
@@ -105,7 +105,7 @@ def fit_collision_volume(defines: dict | None = None) -> float:
             pass
 
 
-def load_mesh(defines: dict | None = None, part: str = "tray") -> trimesh.Trimesh:
+def load_mesh(defines: dict | None = None, part: str = "bracket") -> trimesh.Trimesh:
     _, stl = render(defines, part=part, check=True)
     mesh = trimesh.load(stl, force="mesh")
     os.unlink(stl)

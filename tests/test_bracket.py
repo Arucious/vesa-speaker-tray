@@ -1,0 +1,128 @@
+"""Acceptance tests for the parametric VESA speaker bracket (v2).
+
+Maps to the spec's acceptance criteria:
+  1. defaults render watertight (no CGAL/Manifold errors)
+  2. vesa_pattern=75 + speaker_w=120 stays valid with no manual edits
+  4. insert pockets stay blind (asserted in-SCAD; verified via a failing render)
+plus envelope/lip sanity checks and the loud-failure asserts.
+"""
+
+import numpy as np
+import pytest
+
+from conftest import load_mesh, render, requires_openscad
+
+
+@requires_openscad
+def test_default_bracket_watertight():
+    mesh = load_mesh(part="bracket")
+    assert mesh.is_watertight, "default bracket is not watertight"
+    assert mesh.volume > 0
+
+
+@requires_openscad
+def test_vesa75_speaker120_valid():
+    # Acceptance #2: smaller VESA + narrower speaker, no manual edits.
+    mesh = load_mesh({"vesa_pattern": 75, "speaker_w": 120}, part="bracket")
+    assert mesh.is_watertight
+    assert mesh.volume > 0
+
+
+@requires_openscad
+def test_auto_shelf_tracks_speaker():
+    # Generator contract: setting only the speaker size auto-sizes the shelf so
+    # the part stays valid and the envelope grows with the speaker.
+    small = load_mesh({"speaker_w": 120, "speaker_d": 170}, part="bracket")
+    big = load_mesh({"speaker_w": 190, "speaker_d": 270}, part="bracket")
+    assert small.is_watertight and big.is_watertight
+    # auto shelf_d = speaker_d + 2*clearance + 2*rail_t = speaker_d + 9
+    assert abs((big.bounds[1][1] - big.bounds[0][1]) - (270 + 9)) < 0.3
+    assert abs((small.bounds[1][1] - small.bounds[0][1]) - (170 + 9)) < 0.3
+
+
+@requires_openscad
+def test_print_recommendation_echoed():
+    # The entry file echoes a weight-driven print-setting hint.
+    proc, _ = render({"speaker_weight_kg": 3.5}, part="bracket", check=False)
+    assert "4 walls" in proc.stderr and "15% gyroid" in proc.stderr, proc.stderr
+
+
+@requires_openscad
+def test_through_fastening_watertight():
+    mesh = load_mesh({"fastening": "through"}, part="bracket")
+    assert mesh.is_watertight
+
+
+@requires_openscad
+def test_rails_and_hook_watertight():
+    # Rails + rear heel + cable hook (rails are the default; add the hook).
+    mesh = load_mesh({"cable_hook": True}, part="bracket")
+    assert mesh.is_watertight
+
+
+@requires_openscad
+def test_lip_only_watertight():
+    # The simplest retention path must still close up.
+    mesh = load_mesh({"retention_style": "lip", "rear_heel": False}, part="bracket")
+    assert mesh.is_watertight
+
+
+@requires_openscad
+def test_pads_render():
+    mesh = load_mesh(part="pads")
+    assert mesh.volume > 0
+
+
+@requires_openscad
+def test_assembly_renders():
+    # demo_assembly includes a % ghost cube; just confirm it renders cleanly.
+    proc, _ = render(part="assembly", check=False)
+    assert proc.returncode == 0, proc.stderr
+
+
+@requires_openscad
+def test_bracket_envelope():
+    # Whole part lives where the spec says: shelf top at z=0, tallest retention
+    # above it, plate down to -plate_h, shelf out to -shelf_d, rear face at y=0.
+    mesh = load_mesh(part="bracket")
+    (xmin, ymin, zmin), (xmax, ymax, zmax) = mesh.bounds
+    assert abs(zmax - 35.0) < 0.2, f"top at {zmax}, expected rail_h=35"
+    assert abs(zmin + 130.0) < 0.2, f"plate bottom at {zmin}, expected -plate_h=-130"
+    assert abs(ymax) < 0.2, f"rear face at {ymax}, expected y=0"
+    assert abs(ymin + 216.0) < 0.2, f"front edge at {ymin}, expected -shelf_d=-216"
+    assert abs(xmax - 80.0) < 0.2 and abs(xmin + 80.0) < 0.2, "shelf width != 160"
+
+
+@requires_openscad
+def test_lip_retains_at_front():
+    # With lip-only retention, material above the shelf top exists only in the
+    # front lip band.
+    mesh = load_mesh({"retention_style": "lip", "rear_heel": False}, part="bracket")
+    v = mesh.vertices
+    above = v[v[:, 2] > 0.5]
+    assert len(above), "no lip material above the shelf top"
+    assert above[:, 1].max() < -216 + 4 + 0.1, "material above shelf top outside the lip band"
+
+
+@requires_openscad
+def test_insert_too_deep_is_rejected():
+    # Acceptance #4: a pocket deeper than plate_t + boss_h - 1.5 must fail.
+    proc, _ = render({"insert_depth": 20}, part="bracket", check=False)
+    assert proc.returncode != 0
+    assert "insert_depth" in proc.stderr or "blind" in proc.stderr.lower()
+
+
+@requires_openscad
+def test_vesa_exceeding_plate_is_rejected():
+    # A 100mm pattern can't fit a 105mm-wide plate with boss walls.
+    proc, _ = render({"plate_w": 105}, part="bracket", check=False)
+    assert proc.returncode != 0
+    assert "plate" in proc.stderr.lower()
+
+
+@requires_openscad
+def test_gusset_hole_collision_is_rejected():
+    # 9 gussets across a 130 plate puts two of them on the VESA hole columns.
+    proc, _ = render({"gusset_count": 9}, part="bracket", check=False)
+    assert proc.returncode != 0
+    assert "gusset" in proc.stderr.lower()

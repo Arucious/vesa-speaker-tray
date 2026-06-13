@@ -1,80 +1,180 @@
-# Parametric VESA Speaker Tray — OpenSCAD Design Spec
+# Parametric VESA Speaker Bracket (v2) — OpenSCAD Design Spec
 
 ## Purpose
 
-A 3D-printable tray that mounts a passive/active bookshelf speaker (Edifier S880DB MK II) to a standard monitor arm VESA head (Secretlab arm, 100x100 VESA, M4 hardware). The speaker sits in a lipped tray; the tray bolts to the arm. Fully parametric so the same .scad file can be re-used for other speakers, other VESA patterns, and tweaked clearances without editing geometry code.
+A 3D-printable bracket that mounts a bookshelf speaker (Edifier S880DB MK2) to a
+standard monitor-arm VESA head (Secretlab MAGNUS arm, 75×75 / 100×100, M4).
+A **vertical VESA plate** sits below a **cantilevered horizontal shelf**, braced
+by triangular gussets. The speaker sits on the shelf on TPU pads, retained by a
+front lip plus an optional strap or side rails. Two brackets will be printed
+(one per speaker); the cabinets are externally identical, but `mirror_part` is
+kept for future asymmetric features.
 
-Two trays will be printed (one per speaker). The left/active and right/passive cabinets are externally identical, so a single design suffices — but include a `mirror_part` boolean parameter anyway in case asymmetric features (e.g., rear cutout offset) are added later.
+Fully parametric: other speakers, VESA patterns, and clearances are reachable by
+changing parameters, never geometry code.
+
+### Why v2 (v1 is unmountable)
+
+v1 was a tray with the VESA interface on its **underside**, requiring the arm
+head to tilt until the VESA plate faces the ceiling. The Secretlab MAGNUS arm's
+tilt range is **+70°/−90°** (swivel/rotation ±90° don't help), so the plate can
+never face up: v1 cannot mount on this arm. v2 keeps the arm in its normal
+orientation (plate vertical).
+
+### Why the plate sits BELOW the shelf (not behind the cabinet)
+
+The cabinet is rear-ported and the active speaker's I/O (power, RCA/optical,
+knobs) is on the rear face, with connectors protruding 20–40 mm. A plate behind
+the cabinet would block them or force a large standoff. Putting the plate
+entirely below the shelf keeps the rear face clear; cables exit the rear, pass
+through the central notch in the rear heel, and drop down the arm side of the
+plate (gathered by the optional cable hook).
+
+### Retention vs. overhang (resolved: full support + rear heel)
+
+An earlier revision ran a shelf shallower than the cabinet so the rear
+overhung into open air (less cantilever moment, cables drop freely). That
+precludes a rear stop — there's no shelf behind the cabinet to mount one — and
+a strap-over-the-top is impractical for a 237 mm cabinet. This revision instead
+supports the **full** cabinet depth and captures it on all sides: front lip +
+side rails + a rear heel (with a cable notch). The cost is a deeper shelf and a
+larger cantilever moment (centroid ≈ 105 mm forward of the plate ⇒ ≈ 3.7 N·m at
+3.5 kg), still well within the gusset/insert capacity; creep, not strength,
+remains the design driver.
 
 ## Coordinate convention
 
-- Origin at the center of the tray floor, top surface of the floor = Z 0.
-- X = speaker width axis, Y = speaker depth axis (front of speaker = -Y), Z = up.
-- Speaker cabinet rests on the tray floor; VESA interface is on the underside (Z negative).
+- X = speaker width axis. Y = depth axis, **front of speaker = −Y**. Z = up.
+- Origin: shelf top surface = Z 0; **plate rear face = Y 0** (the face the arm's
+  VESA plate bolts against). The shelf spans Y −`shelf_d`‥0; the plate spans
+  Y −`plate_t`‥0, Z −`plate_h`‥0.
+- VESA hole square is centered at X 0, Z −`vesa_drop`, on the plate.
 
-## Parameters (all in mm unless noted; defaults shown are PLACEHOLDERS — final values come from caliper measurement of the actual cabinet)
+## Load case (sets defaults; not enforced in code)
+
+- Static: 3.5 kg per bracket (active S880DB ≈ 3.4 kg), centroid ≈ 105 mm forward
+  of the plate → tipping moment ≈ 3.7 N·m → top-screw tension ≈ 19 N/screw at
+  100 mm spacing. Trivial for the inserts; **creep deflection of the cantilevered
+  shelf governs** — the gussets are the primary anti-creep feature; do not omit
+  or shrink them.
+- Dynamic: continuous low-amplitude vibration. Use spring/wave washers or
+  nylon-patch M4 screws. **No liquid threadlocker** (crazes PETG). The speaker
+  must be mechanically retained (lip + strap/rails), not just resting.
+
+## Parameters (mm; speaker defaults are manufacturer specs — verify with calipers)
 
 | Parameter | Default | Notes |
 |---|---|---|
-| `speaker_w` | 146 | Cabinet width — MEASURE |
-| `speaker_d` | 247 | Cabinet depth — MEASURE |
-| `cabinet_clearance` | 0.5 | Per-side gap between cabinet and lip |
-| `lip_h` | 18 | Lip height above tray floor (range 15–20) |
-| `lip_t` | 4 | Lip wall thickness |
-| `floor_t` | 6 | Tray floor thickness |
-| `rear_cutout_w` | 120 | Width of rear lip cutout (amp plate, port, knobs, cables) |
-| `rear_cutout_full` | true | If true, rear lip removed entirely across `rear_cutout_w`, down to floor level |
-| `front_window` | false | Optional front lip window for aesthetics/weight |
-| `vesa_pattern` | 100 | 100 or 75; hole spacing, square |
-| `vesa_hole_d` | 4.5 | Through-hole for M4 clearance — OR see insert option |
-| `use_inserts` | true | If true, holes sized for heat-set inserts instead of through-bolts |
-| `insert_d` | 5.6 | Ruthex M4 (RX-M4x8.1) nominal pilot diameter — verify against Ruthex datasheet |
-| `insert_depth` | 8.5 | Pocket depth for insert |
-| `boss_d` | 14 | Cylindrical boss diameter around each VESA hole |
-| `boss_h` | 8 | Boss protrusion below tray floor |
-| `rib_t` | 4 | Rib thickness |
-| `rib_count_x` | 2 | Ribs per side running boss→lip in X |
-| `rib_count_y` | 2 | Ribs per side running boss→lip in Y |
-| `pad_recess_depth` | 1.5 | Recess in floor for TPU pads |
-| `pad_recess_w` | 25 | TPU pad strip width |
-| `pad_count` | 3 | Pad strips across floor (front, middle, rear), running in X |
-| `lip_pad_recess` | true | Shallow (1mm) recesses on inner lip faces for TPU strips |
-| `strap_slots` | false | Optional: two 25x4 slots in floor near front and rear for a velcro strap |
-| `corner_r` | 6 | Outer fillet radius on tray corners |
-| `mirror_part` | false | Mirror about X for a handed variant |
+| `speaker_w` | 145 | Cabinet width (S880DB MK2: 145×237×207 W×H×D) |
+| `speaker_d` | 207 | Cabinet depth |
+| `speaker_h` | 237 | Cabinet height (assembly ghost + strap sizing only) |
+| `cabinet_clearance` | 0.5 | Gap between cabinet and lip/rails faces |
+| `shelf_w` | 0 = auto | Shelf width; auto = `speaker_w + 2·clearance + 2·rail_t + 6` |
+| `shelf_d` | 0 = auto | Shelf depth; auto = `speaker_d + 2·clearance + 2·rail_t` (full support) |
+| `shelf_t` | 7 | Shelf thickness (6–8) |
+| `lip_h` | 6 | **Effective** lip height above the pad top (5–8) |
+| `lip_t` | 4 | Lip thickness |
+| `plate_w` | 130 | VESA plate width (≥ 120 to cover both patterns) |
+| `plate_h` | 130 | VESA plate height |
+| `plate_t` | 8 | VESA plate thickness (6–8) |
+| `vesa_drop` | 70 | Shelf top → VESA square center. Raise it if your arm head is tall so it clears the underside of the shelf |
+| `vesa_pattern` | 100 | 100 or 75 |
+| `fastening` | "insert" | "insert" = Ruthex heat-set, blind; "through" = M4 through-bolt + front hex-nut trap |
+| `insert_d` | 5.6 | Ruthex RX-M4 pilot bore — Ø5.6 per datasheet (NOT 4.0; 4.0 is the screw) |
+| `insert_depth` | 9 | Blind pocket depth, opens on the REAR face (≥ insert length 8.1) |
+| `insert_boss_d` | 12 | Boss on the plate FRONT face giving the pocket its dead end (≥2 mm wall around the bore) |
+| `insert_boss_h` | 4 | Boss height; pocket must end ≥1.5 mm before the boss face |
+| `vesa_hole_d` | 4.5 | M4 clearance bore ("through" mode) |
+| `nut_af` | 7.0 | DIN 934 M4 nut across-flats ("through" mode) |
+| `nut_trap_depth` | 3.2 | Hex pocket depth in the plate front face |
+| `gusset_count` | 2 | Triangular gussets under the shelf |
+| `gusset_t` | 5 | Gusset thickness (5–6) |
+| `gusset_depth` | 0 | 0 = auto: full usable depth (to the lip's inner face) |
+| `gusset_h` | 0 | 0 = auto: full plate height minus the corner rounding |
+| `fillet_r` | 3 | Concave fillet bead at the shelf↔plate junction (≥ 3) |
+| `pad_recess_depth` | 1.5 | Pad recess in the shelf top. For 3.2 mm sorbothane/EVA sheet (variant B) deepen to ~2.2 so the sheet sits ~1 mm proud |
+| `pad_recess_w` | 25 | Pad strip width |
+| `pad_count` | 3 | Strips across the cabinet footprint |
+| `pad_proud` | 1 | How far pads stand above the shelf top |
+| `lip_pad_recess` | true | 1 mm TPU recess on the lip inner face |
+| `retention_style` | "rails" | "lip", "strap" (lip + 2 velcro slots), or "rails" (lip + side rails) |
+| `rail_t` | 4 | Side-rail thickness ("rails" mode) |
+| `rail_h` | 35 | Side-rail height above the shelf top ("rails" mode) |
+| `rear_heel` | true | Low rear stop behind the cabinet (needs full-depth shelf) |
+| `rear_heel_h` | 25 | Rear-heel height; keep below the cabinet's rear I/O panel |
+| `rear_heel_notch_w` | 40 | Central cable gap in the rear heel |
+| `cable_hook` | false | Eyelet tab below the plate for a cable loop/velcro |
+| `corner_r` | 6 | Outer rounding (shelf corners, plate bottom corners) |
+| `mirror_part` | false | Mirror about X |
 
-Derived values:
-- `tray_inner_w = speaker_w + 2*cabinet_clearance`
-- `tray_inner_d = speaker_d + 2*cabinet_clearance`
-- `tray_outer_w = tray_inner_w + 2*lip_t`
-- `tray_outer_d = tray_inner_d + 2*lip_t`
+Derived (functions in `src/params.scad`):
+- `shelf_usable_d = shelf_d - lip_t` (lip inner face → shelf rear edge)
+- `rear_overhang = speaker_d + lip_t + cabinet_clearance - shelf_d`
+  (cabinet past the plate's rear face; ≤ 0 at defaults = fully supported. If
+  positive, `bracket()` warns that the rear heel won't reach the cabinet.)
+- `lip_total_h = lip_h + pad_proud` (physical lip height above the shelf top)
 
 ## Geometry description
 
-1. **Tray floor**: solid plate, `tray_outer_w` x `tray_outer_d` x `floor_t`, rounded corners (`corner_r`).
-2. **Lip**: perimeter wall on all four sides, height `lip_h`, thickness `lip_t`. Rear side gets the cutout per `rear_cutout_w` / `rear_cutout_full` so the amp plate, bass-reflex port, rear knobs, and cabling are never obstructed and the speaker can be lifted out backward-tilted.
-3. **VESA interface (underside)**: four cylindrical bosses on the `vesa_pattern` square, centered on the tray. If `use_inserts`, blind pockets sized `insert_d` x `insert_depth` opening downward (insert installed from below, bolt enters from the arm side). Else, M4 clearance through-holes with hex-nut pockets recessed into the floor top (nut trap, 7.0mm across flats, 3.2mm deep — verify DIN 934).
-4. **Ribs**: from each boss, radial ribs (`rib_t` thick, full `boss_h` + `floor_t` tall at the boss, tapering toward the lip) tie the cantilevered load path into the perimeter. The dominant load case is a ~3.5 kg speaker with the arm holding the tray horizontally; bending concentrates at the boss-to-floor junction.
-5. **TPU pad recesses**: `pad_count` strips recessed `pad_recess_depth` into the floor's top surface, full inner width, for separately printed TPU 95A pads (model the pads as a second part in the same file, 0.3mm undersized for press fit, `pad_recess_depth + 1`mm thick so they proud the floor by 1mm). Same treatment on inner lip faces if `lip_pad_recess`.
-6. **Optional strap slots** per `strap_slots`.
+1. **Plate**: vertical `plate_w` × `plate_h` × `plate_t`, top edge merged into
+   the shelf's rear underside, corners rounded `corner_r`.
+2. **Shelf**: horizontal `shelf_w` × `shelf_d` × `shelf_t`, rear edge flush with
+   the plate's rear face, plan corners rounded `corner_r`.
+3. **Junction fillet**: concave bead, radius `fillet_r`, across the plate front
+   face ↔ shelf underside corner. No sharp internal corners anywhere load-bearing.
+4. **Gussets**: `gusset_count` right triangles under the shelf, evenly spread
+   across the plate width (outboard of the VESA holes — asserted), running the
+   full usable depth and full plate height by default.
+5. **VESA fastening** ("insert"): four Ø`insert_d` pockets opening on the REAR
+   face, `insert_depth` deep, blind — each backed by a boss on the front face so
+   the pocket dead-ends ≥ 1.5 mm before daylight. Each pocket gets a 0.4 mm-deep,
+   +2 mm-Ø relief counterbore so heat-set squeeze-out stays below flush and the
+   arm's VESA plate seats flat on the rear face. Inserts melt in from the rear;
+   the arm's M4 screws (stock M4×10–12 + wave washer) come from the arm side.
+   ("through"): Ø`vesa_hole_d` through-bores with hex-nut traps on the front face.
+6. **Front lip** at the shelf's front edge, physical height `lip_h + pad_proud`
+   so the *effective* retention above the pad top is `lip_h`.
+7. **Retention**: a front lip is always present. "rails" (default) adds side
+   walls `rail_h` tall at `speaker_w/2 + cabinet_clearance` per side; "strap"
+   adds two velcro slots (legacy — impractical for a tall cabinet); "lip" is
+   front-only. Independently, `rear_heel` adds two posts at the shelf's rear
+   edge behind the cabinet, with a central `rear_heel_notch_w` cable gap. Lip +
+   rails + heel capture the cabinet on all sides (drop-in from the top).
+8. **Pads**: `pad_count` recessed strips across the cabinet footprint; separately
+   printed TPU 95A pads press in 0.3 mm undersized and stand `pad_proud` above
+   the shelf. Print pads with low infill / few top layers for compliance (95A is
+   firm; the slicer supplies the softness, not the geometry). Variant B: deepen
+   `pad_recess_depth` and cut 3.2 mm sorbothane/EVA sheet to the recess instead.
+9. **Cable hook** (optional): a rounded eyelet tab extending below the plate,
+   flush with the rear face, Ø8 hole for a velcro/cable loop.
+10. **No structure behind or beside the cabinet's rear face** — port and I/O
+    stay fully unobstructed.
 
-## Output / module structure
+## Validation (asserted by `bracket()` — fail loudly, never emit bad geometry)
 
-- Top-level modules: `tray()`, `tpu_pads()` (echo a note that pads print in TPU), and a `demo_assembly()` showing tray + translucent speaker bounding box for visual verification.
-- A `part` selector variable ("tray" / "pads" / "assembly") for export workflow.
-- All features must remain valid across `vesa_pattern` 75/100 and ±20% on speaker dimensions (no overlapping holes, ribs auto-spacing).
-- `$fn = 64` minimum on cylinders.
+- VESA holes (incl. boss/bore wall ≥ 2 mm) stay inside the plate, below the
+  junction fillet, above the bottom rounding.
+- Gussets never intersect a VESA hole column (bore/boss + 1 mm clearance).
+- Insert pockets stay blind: `insert_depth ≤ plate_t + insert_boss_h − 1.5`.
+- Effective lip ≥ 3 mm; rails fit inside the shelf width.
+- These must hold across `vesa_pattern` 75/100 and ±20 % on speaker dimensions.
 
-## Printing intent (informs design, not code)
+## Printing intent
 
-- Body: PETG or PETG-CF, printed floor-down, 6 walls, 40%+ infill or solid in the boss region (the agent should keep boss/rib geometry friendly to this orientation — no floating overhangs > 50°).
-- Pads: TPU 95A.
-- Bambu P1S, 0.4 nozzle; minimum feature thickness 1.6mm.
+- Body: PETG (creep resistance; lives near electronics warmth), **rear face of
+  the plate flat on the bed** — the shelf prints as a vertical wall, gussets as
+  in-plane triangles (hypotenuse ≈ 33° from vertical), insert bosses rise from
+  the top surface. No supports. 6 walls, 40–50 % infill (solid around the
+  bosses), 0.2 mm layers.
+- Pads: TPU 95A, ~10–20 % gyroid, 2 perimeters, few/no top layers.
+- Bambu P1S, 0.4 mm nozzle; min feature thickness 1.6 mm. One piece — no splitting.
 
 ## Acceptance criteria
 
-1. With defaults, renders watertight (no CGAL errors), prints without supports floor-down.
-2. Changing `vesa_pattern` to 75 and `speaker_w` to 120 produces valid geometry with no manual edits.
-3. Speaker bounding box in `demo_assembly()` clears the lip by exactly `cabinet_clearance` per side.
-4. Rear cutout leaves zero lip material within `rear_cutout_w` when `rear_cutout_full` is true.
-5. Insert pockets are blind (do not break through the tray floor's top surface).
+1. Defaults render watertight; prints support-free in the stated orientation.
+2. `vesa_pattern=75` + `speaker_w=120` valid with no manual edits.
+3. M4 bolts on the chosen VESA pattern pass through the rear-face pockets/bores
+   (empty intersection); a 6 mm-misaligned pattern collides (fit test discriminates).
+4. Insert pockets are blind; an over-deep pocket fails the render loudly.
+5. The cabinet ghost in `demo_assembly()` clears the lip/rails by
+   `cabinet_clearance` and its rear face seats against the rear heel.

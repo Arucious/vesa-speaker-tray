@@ -1,9 +1,9 @@
 """Parametric VESA mounting-fit validation.
 
-Confirms that an M4 bolt array on a given VESA square pattern actually mates with
-the tray's mounting holes (bolts clear the hole voids), and that the check
-discriminates (a wrong pattern collides with boss material). Add a pattern to
-``VESA_PATTERNS`` to validate another plate type.
+Confirms that an M4 bolt array on a given VESA square pattern actually mates
+with the bracket's rear-face mounting holes (bolts clear the hole voids), and
+that the check discriminates (a wrong pattern collides with plate material).
+Add a pattern to ``VESA_PATTERNS`` to validate another plate type.
 """
 
 import pytest
@@ -15,17 +15,18 @@ VESA_PATTERNS = [75, 100]
 
 # A clean fit may leave tiny numerical slivers; require it to be negligible.
 FIT_EPS_MM3 = 20.0
-# A 6mm misalignment must drive the bolts well into boss material.
-MISS_MIN_MM3 = 100.0
+# A 6mm misalignment must drive the bolts well into plate material. The bolts
+# sit ~9mm deep in solid plate: ~110 mm^3 at Ø4, so 80 keeps margin.
+MISS_MIN_MM3 = 80.0
 
 
 @requires_openscad
 @pytest.mark.parametrize("pattern", VESA_PATTERNS)
 def test_vesa_plate_bolts_fit(pattern):
-    # Bolts on the matching pattern sit in the hole voids -> empty intersection.
+    # Bolts on the matching pattern sit in the pocket voids -> empty intersection.
     vol = fit_collision_volume({"fit_pattern": pattern})
     assert vol <= FIT_EPS_MM3, (
-        f"M4 bolts on a {pattern}x{pattern} VESA plate collide with the tray "
+        f"M4 bolts on a {pattern}x{pattern} VESA plate collide with the bracket "
         f"({vol:.1f} mm^3 of material in the bolt path)"
     )
 
@@ -34,7 +35,7 @@ def test_vesa_plate_bolts_fit(pattern):
 @pytest.mark.parametrize("pattern", VESA_PATTERNS)
 def test_vesa_plate_through_bolt_fit(pattern):
     # Same check in through-bolt mode (no heat-set inserts).
-    vol = fit_collision_volume({"fit_pattern": pattern, "fit_use_inserts": False})
+    vol = fit_collision_volume({"fit_pattern": pattern, "fit_fastening": "through"})
     assert vol <= FIT_EPS_MM3, (
         f"M4 through-bolts on a {pattern}x{pattern} plate collide ({vol:.1f} mm^3)"
     )
