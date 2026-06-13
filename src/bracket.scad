@@ -164,6 +164,12 @@ module bracket(
                     translate([0, 0.01, 0])
                         rotate([90, 0, 0])
                             cylinder(d = insert_d, h = insert_depth + 0.01, $fn = 64);
+                    // Shallow relief counterbore: heat-set installation squeezes
+                    // out a small lip of plastic; keep it below flush so the
+                    // arm's VESA plate still seats flat on the rear face.
+                    translate([0, 0.01, 0])
+                        rotate([90, 0, 0])
+                            cylinder(d = insert_d + 2, h = 0.41, $fn = 64);
                 } else {
                     translate([0, 1, 0])
                         rotate([90, 0, 0])

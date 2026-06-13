@@ -111,7 +111,9 @@ Derived (functions in `src/params.scad`):
    full usable depth and full plate height by default.
 5. **VESA fastening** ("insert"): four Ø`insert_d` pockets opening on the REAR
    face, `insert_depth` deep, blind — each backed by a boss on the front face so
-   the pocket dead-ends ≥ 1.5 mm before daylight. Inserts melt in from the rear;
+   the pocket dead-ends ≥ 1.5 mm before daylight. Each pocket gets a 0.4 mm-deep,
+   +2 mm-Ø relief counterbore so heat-set squeeze-out stays below flush and the
+   arm's VESA plate seats flat on the rear face. Inserts melt in from the rear;
    the arm's M4 screws (stock M4×10–12 + wave washer) come from the arm side.
    ("through"): Ø`vesa_hole_d` through-bores with hex-nut traps on the front face.
 6. **Front lip** at the shelf's front edge, physical height `lip_h + pad_proud`
