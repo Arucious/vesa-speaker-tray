@@ -1,17 +1,22 @@
 /*
-  Parametric VESA Speaker Tray
-  ----------------------------
-  A 3D-printable tray that mounts a bookshelf speaker to a monitor-arm VESA head
-  (100x100 / 75x75, M4). The speaker sits in a lipped tray; the tray bolts to the
-  arm via heat-set inserts (or through-bolts + nut traps) on cylindrical bosses,
-  with ribbed bracing carrying the cantilevered load into the perimeter.
+  Parametric VESA Speaker Bracket (v2)
+  ------------------------------------
+  Mounts a bookshelf speaker to a monitor-arm VESA head (100x100 / 75x75, M4)
+  kept in its normal, vertical orientation: a vertical VESA plate sits below a
+  cantilevered shelf braced by triangular gussets. The speaker rests on TPU
+  pads behind a front retention lip (plus an optional strap or side rails);
+  its rear face — bass-reflex port and all I/O — stays fully unobstructed.
 
-  Fully parametric: re-target other speakers / VESA patterns / clearances without
-  touching geometry. Edit the values below (or use OpenSCAD's Customizer) and pick
-  a Part to export.
+  v1 (a tray bolting to an upward-facing VESA head) is unmountable on arms
+  that cannot tilt the head past +70°, like the Secretlab MAGNUS. See
+  docs/vesa-speaker-tray-spec.md for the v2 rationale and load case.
 
-  Defaults are PLACEHOLDERS from the spec — measure the actual cabinet with
-  calipers before printing. See docs/vesa-speaker-tray-spec.md.
+  Fully parametric: re-target other speakers / VESA patterns / clearances
+  without touching geometry. Edit the values below (or use OpenSCAD's
+  Customizer) and pick a Part to export.
+
+  Speaker defaults are the Edifier S880DB MK2 manufacturer specs — verify
+  against the actual cabinet with calipers before printing.
 
   License: MIT (see LICENSE).
 */
@@ -21,87 +26,137 @@
 // OpenSCAD >= 2026 (MakerWorld's renderer) errors if they're missing here.
 include <BOSL2/std.scad>
 
-use <src/tray.scad>
+use <src/bracket.scad>
 use <src/pads.scad>
 use <src/assembly.scad>
 
-// `use` does not import these top-level vars into the modules, so every value is
-// passed explicitly below.
+// `use` does not import these top-level vars into the modules, so every value
+// is passed explicitly below.
 
 /* [Output] */
 // Which part to render / export.
-Part = "tray"; // [tray, pads, assembly]
+Part = "bracket"; // [bracket, pads, assembly]
 
 /* [Speaker] */
-speaker_w         = 146;   // cabinet width  (MEASURE)
-speaker_d         = 247;   // cabinet depth  (MEASURE)
-cabinet_clearance = 0.5;   // per-side gap between cabinet and lip
+// Cabinet width — verify with calipers
+speaker_w = 145;
+// Cabinet depth — verify with calipers
+speaker_d = 207;
+// Cabinet height (assembly preview only)
+speaker_h = 237;
+// Per-side gap between cabinet and lip/rails
+cabinet_clearance = 0.5;
 
-/* [Tray] */
-lip_h   = 18;              // [10:0.5:25] lip height above the floor
-lip_t   = 4;               // lip wall thickness
-floor_t = 6;               // floor thickness
-corner_r= 6;               // outer corner fillet radius
+/* [Shelf] */
+shelf_w = 150;
+// Less than speaker_d on purpose: the cabinet overhangs the rear, above the arm head
+shelf_d = 180;
+shelf_t = 7;
+// EFFECTIVE retention height above the pad top
+lip_h = 6;
+lip_t = 4;
 
-/* [Rear / Front openings] */
-rear_cutout_w    = 120;    // width of the rear lip cutout (amp plate, port, cables)
-rear_cutout_full = true;   // remove the rear lip entirely across rear_cutout_w
-front_window     = false;  // optional window in the front lip
+/* [VESA plate] */
+plate_w = 130;
+plate_h = 130;
+plate_t = 8;
+// Shelf top -> VESA square center; raise if your arm head is tall
+vesa_drop = 70;
+// Hole spacing, square
+vesa_pattern = 100; // [75, 100]
 
-/* [VESA mount] */
-vesa_pattern = 100;        // [100, 75] hole spacing (square)
-use_inserts  = true;       // heat-set inserts (true) or through-bolts + nut trap (false)
-vesa_hole_d  = 4.5;        // M4 clearance through-hole (when use_inserts = false)
-insert_d     = 5.6;        // Ruthex M4 heat-set pilot diameter (verify vs datasheet)
-insert_depth = 8.5;        // insert pocket depth
-boss_d       = 14;         // boss diameter around each hole
-boss_h       = 8;          // boss protrusion below the floor
+/* [Fastening] */
+// Heat-set inserts (blind, rear face) or M4 through-bolts + front nut traps
+fastening = "insert"; // [insert, through]
+// Ruthex RX-M4 pilot bore per datasheet (4.0 is the screw, not the bore!)
+insert_d = 5.6;
+insert_depth = 9;
+insert_boss_d = 12;
+insert_boss_h = 4;
+// M4 clearance bore (through mode)
+vesa_hole_d = 4.5;
+// DIN 934 M4 nut across-flats (through mode)
+nut_af = 7.0;
+nut_trap_depth = 3.2;
 
-/* [Ribs] */
-rib_t       = 4;           // rib thickness
-rib_count_x = 2;           // ribs per boss toward the X walls
-rib_count_y = 2;           // ribs per boss toward the Y walls
+/* [Gussets] */
+gusset_count = 2;
+gusset_t = 5;
+// 0 = auto: full usable depth
+gusset_depth = 0;
+// 0 = auto: full plate height
+gusset_h = 0;
+// Shelf-to-plate junction fillet
+fillet_r = 3;
 
-/* [TPU pads] */
-pad_recess_depth = 1.5;    // recess depth in the floor for TPU pads
-pad_recess_w     = 25;     // pad strip width
-pad_count        = 3;      // [1:6] number of pad strips across the floor
-lip_pad_recess   = true;   // shallow TPU recesses on the inner lip faces
+/* [Pads] */
+// Deepen to ~2.2 for 3.2mm sorbothane/EVA sheet instead of printed TPU
+pad_recess_depth = 1.5;
+pad_recess_w = 25;
+pad_count = 3;
+// How far pads stand above the shelf top
+pad_proud = 1;
+lip_pad_recess = true;
 
-/* [Options] */
-strap_slots = false;       // velcro-strap slots through the floor
-mirror_part = false;       // mirror about X for a handed variant
+/* [Retention] */
+// lip = front lip only; strap = lip + velcro slots; rails = lip + side rails
+retention_style = "strap"; // [lip, strap, rails]
+rail_t = 4;
 
-/* [Quality] */
-$fn = 64;                  // minimum facets on cylinders (spec)
+/* [Extras] */
+// Eyelet tab below the plate for a cable loop
+cable_hook = false;
+corner_r = 6;
+mirror_part = false;
 
-// ---------------------------------------------------------------------------
-if (Part == "tray")
-    tray(speaker_w = speaker_w, speaker_d = speaker_d,
-         cabinet_clearance = cabinet_clearance, lip_h = lip_h, lip_t = lip_t,
-         floor_t = floor_t, rear_cutout_w = rear_cutout_w,
-         rear_cutout_full = rear_cutout_full, front_window = front_window,
-         vesa_pattern = vesa_pattern, vesa_hole_d = vesa_hole_d,
-         use_inserts = use_inserts, insert_d = insert_d, insert_depth = insert_depth,
-         boss_d = boss_d, boss_h = boss_h, rib_t = rib_t,
-         rib_count_x = rib_count_x, rib_count_y = rib_count_y,
-         pad_recess_depth = pad_recess_depth, pad_recess_w = pad_recess_w,
-         pad_count = pad_count, lip_pad_recess = lip_pad_recess,
-         strap_slots = strap_slots, corner_r = corner_r, mirror_part = mirror_part);
+/* [Hidden] */
+$fn = 64;
+
+if (Part == "bracket")
+    bracket(speaker_w = speaker_w, speaker_d = speaker_d,
+            cabinet_clearance = cabinet_clearance,
+            shelf_w = shelf_w, shelf_d = shelf_d, shelf_t = shelf_t,
+            lip_h = lip_h, lip_t = lip_t,
+            plate_w = plate_w, plate_h = plate_h, plate_t = plate_t,
+            vesa_drop = vesa_drop, vesa_pattern = vesa_pattern,
+            fastening = fastening, insert_d = insert_d,
+            insert_depth = insert_depth, insert_boss_d = insert_boss_d,
+            insert_boss_h = insert_boss_h, vesa_hole_d = vesa_hole_d,
+            nut_af = nut_af, nut_trap_depth = nut_trap_depth,
+            gusset_count = gusset_count, gusset_t = gusset_t,
+            gusset_depth = gusset_depth, gusset_h = gusset_h,
+            fillet_r = fillet_r,
+            pad_recess_depth = pad_recess_depth, pad_recess_w = pad_recess_w,
+            pad_count = pad_count, pad_proud = pad_proud,
+            lip_pad_recess = lip_pad_recess,
+            retention_style = retention_style, rail_t = rail_t,
+            cable_hook = cable_hook, corner_r = corner_r,
+            mirror_part = mirror_part);
 else if (Part == "pads")
-    tpu_pads(speaker_w = speaker_w, speaker_d = speaker_d,
-             cabinet_clearance = cabinet_clearance, pad_recess_depth = pad_recess_depth,
-             pad_recess_w = pad_recess_w, pad_count = pad_count,
-             lip_pad_recess = lip_pad_recess, lip_h = lip_h, layout = true);
-else
+    tpu_pads(speaker_w = speaker_w, shelf_d = shelf_d, lip_t = lip_t,
+             pad_recess_depth = pad_recess_depth, pad_recess_w = pad_recess_w,
+             pad_count = pad_count, pad_proud = pad_proud,
+             lip_pad_recess = lip_pad_recess, lip_h = lip_h,
+             layout = true);
+else if (Part == "assembly")
     demo_assembly(speaker_w = speaker_w, speaker_d = speaker_d,
-         cabinet_clearance = cabinet_clearance, lip_h = lip_h, lip_t = lip_t,
-         floor_t = floor_t, rear_cutout_w = rear_cutout_w,
-         rear_cutout_full = rear_cutout_full, front_window = front_window,
-         vesa_pattern = vesa_pattern, vesa_hole_d = vesa_hole_d,
-         use_inserts = use_inserts, insert_d = insert_d, insert_depth = insert_depth,
-         boss_d = boss_d, boss_h = boss_h, rib_t = rib_t,
-         rib_count_x = rib_count_x, rib_count_y = rib_count_y,
-         pad_recess_depth = pad_recess_depth, pad_recess_w = pad_recess_w,
-         pad_count = pad_count, lip_pad_recess = lip_pad_recess,
-         strap_slots = strap_slots, corner_r = corner_r, mirror_part = mirror_part);
+                  speaker_h = speaker_h, cabinet_clearance = cabinet_clearance,
+                  shelf_w = shelf_w, shelf_d = shelf_d, shelf_t = shelf_t,
+                  lip_h = lip_h, lip_t = lip_t,
+                  plate_w = plate_w, plate_h = plate_h, plate_t = plate_t,
+                  vesa_drop = vesa_drop, vesa_pattern = vesa_pattern,
+                  fastening = fastening, insert_d = insert_d,
+                  insert_depth = insert_depth, insert_boss_d = insert_boss_d,
+                  insert_boss_h = insert_boss_h, vesa_hole_d = vesa_hole_d,
+                  nut_af = nut_af, nut_trap_depth = nut_trap_depth,
+                  gusset_count = gusset_count, gusset_t = gusset_t,
+                  gusset_depth = gusset_depth, gusset_h = gusset_h,
+                  fillet_r = fillet_r,
+                  pad_recess_depth = pad_recess_depth,
+                  pad_recess_w = pad_recess_w, pad_count = pad_count,
+                  pad_proud = pad_proud, lip_pad_recess = lip_pad_recess,
+                  retention_style = retention_style, rail_t = rail_t,
+                  cable_hook = cable_hook, corner_r = corner_r,
+                  mirror_part = mirror_part);
+else
+    assert(false, str("Unknown Part: ", Part));

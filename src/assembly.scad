@@ -1,59 +1,80 @@
-// Visual-verification assembly: the tray, the TPU pads, and a translucent
+// Visual-verification assembly: the bracket, the TPU pads, and a translucent
 // bounding box standing in for the speaker cabinet. By construction the cabinet
-// box clears the inner lip by exactly `cabinet_clearance` per side.
+// box sits against the lip (front) with `cabinet_clearance`, on top of the
+// pads, and its rear face overhangs the plate by `rear_overhang` — above where
+// the arm head lives.
 
-use <tray.scad>
+use <bracket.scad>
 use <pads.scad>
 use <params.scad>
 
 module demo_assembly(
-    speaker_w        = 146,
-    speaker_d        = 247,
+    speaker_w        = 145,
+    speaker_d        = 207,
+    speaker_h        = 237,
     cabinet_clearance= 0.5,
-    lip_h            = 18,
+    shelf_w          = 150,
+    shelf_d          = 180,
+    shelf_t          = 7,
+    lip_h            = 6,
     lip_t            = 4,
-    floor_t          = 6,
-    rear_cutout_w    = 120,
-    rear_cutout_full = true,
-    front_window     = false,
+    plate_w          = 130,
+    plate_h          = 130,
+    plate_t          = 8,
+    vesa_drop        = 70,
     vesa_pattern     = 100,
-    vesa_hole_d      = 4.5,
-    use_inserts      = true,
+    fastening        = "insert",
     insert_d         = 5.6,
-    insert_depth     = 8.5,
-    boss_d           = 14,
-    boss_h           = 8,
-    rib_t            = 4,
-    rib_count_x      = 2,
-    rib_count_y      = 2,
+    insert_depth     = 9,
+    insert_boss_d    = 12,
+    insert_boss_h    = 4,
+    vesa_hole_d      = 4.5,
+    nut_af           = 7.0,
+    nut_trap_depth   = 3.2,
+    gusset_count     = 2,
+    gusset_t         = 5,
+    gusset_depth     = 0,
+    gusset_h         = 0,
+    fillet_r         = 3,
     pad_recess_depth = 1.5,
     pad_recess_w     = 25,
     pad_count        = 3,
+    pad_proud        = 1,
     lip_pad_recess   = true,
-    strap_slots      = false,
+    retention_style  = "strap",
+    rail_t           = 4,
+    cable_hook       = false,
     corner_r         = 6,
-    mirror_part      = false,
-    demo_speaker_h   = 230   // visualization only; not a tray parameter
+    mirror_part      = false
 ) {
-    tray(speaker_w = speaker_w, speaker_d = speaker_d,
-         cabinet_clearance = cabinet_clearance, lip_h = lip_h, lip_t = lip_t,
-         floor_t = floor_t, rear_cutout_w = rear_cutout_w,
-         rear_cutout_full = rear_cutout_full, front_window = front_window,
-         vesa_pattern = vesa_pattern, vesa_hole_d = vesa_hole_d,
-         use_inserts = use_inserts, insert_d = insert_d, insert_depth = insert_depth,
-         boss_d = boss_d, boss_h = boss_h, rib_t = rib_t,
-         rib_count_x = rib_count_x, rib_count_y = rib_count_y,
-         pad_recess_depth = pad_recess_depth, pad_recess_w = pad_recess_w,
-         pad_count = pad_count, lip_pad_recess = lip_pad_recess,
-         strap_slots = strap_slots, corner_r = corner_r, mirror_part = mirror_part);
+    bracket(speaker_w = speaker_w, speaker_d = speaker_d,
+            cabinet_clearance = cabinet_clearance,
+            shelf_w = shelf_w, shelf_d = shelf_d, shelf_t = shelf_t,
+            lip_h = lip_h, lip_t = lip_t,
+            plate_w = plate_w, plate_h = plate_h, plate_t = plate_t,
+            vesa_drop = vesa_drop, vesa_pattern = vesa_pattern,
+            fastening = fastening, insert_d = insert_d, insert_depth = insert_depth,
+            insert_boss_d = insert_boss_d, insert_boss_h = insert_boss_h,
+            vesa_hole_d = vesa_hole_d, nut_af = nut_af,
+            nut_trap_depth = nut_trap_depth,
+            gusset_count = gusset_count, gusset_t = gusset_t,
+            gusset_depth = gusset_depth, gusset_h = gusset_h,
+            fillet_r = fillet_r,
+            pad_recess_depth = pad_recess_depth, pad_recess_w = pad_recess_w,
+            pad_count = pad_count, pad_proud = pad_proud,
+            lip_pad_recess = lip_pad_recess,
+            retention_style = retention_style, rail_t = rail_t,
+            cable_hook = cable_hook, corner_r = corner_r,
+            mirror_part = mirror_part);
 
-    tpu_pads(speaker_w = speaker_w, speaker_d = speaker_d,
-             cabinet_clearance = cabinet_clearance, pad_recess_depth = pad_recess_depth,
-             pad_recess_w = pad_recess_w, pad_count = pad_count,
+    tpu_pads(speaker_w = speaker_w, shelf_d = shelf_d, lip_t = lip_t,
+             pad_recess_depth = pad_recess_depth, pad_recess_w = pad_recess_w,
+             pad_count = pad_count, pad_proud = pad_proud,
              lip_pad_recess = lip_pad_recess, lip_h = lip_h);
 
-    // translucent cabinet bounding box, resting on the floor + 1mm proud pads
-    pad_top = pad_recess_depth + 1 - pad_recess_depth;   // = 1mm above floor
-    %translate([0, 0, pad_top + demo_speaker_h / 2])
-        cube([speaker_w, speaker_d, demo_speaker_h], center = true);
+    // translucent cabinet, front face against the lip (+ clearance), resting
+    // on the proud pads; the rear face overhangs the plate rear face.
+    cab_front = -shelf_d + lip_t + cabinet_clearance;
+    %translate([0, cab_front + speaker_d / 2, pad_proud + speaker_h / 2])
+        cube([speaker_w, speaker_d, speaker_h], center = true);
 }

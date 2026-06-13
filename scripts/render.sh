@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Render a part to STL.
 #
-#   scripts/render.sh tray            -> dist/vesa_tray-tray.stl
+#   scripts/render.sh bracket         -> dist/vesa_tray-bracket.stl
 #   scripts/render.sh pads            -> dist/vesa_tray-pads.stl
-#   scripts/render.sh tray vesa_pattern=75 speaker_w=120
+#   scripts/render.sh bracket vesa_pattern=75 speaker_w=120
 #
 # Extra args are passed through as OpenSCAD -D overrides (key=value).
 # Requires OpenSCAD on PATH (or set OPENSCAD_BIN) and BOSL2 on OPENSCADPATH.
 set -euo pipefail
 
-PART="${1:-tray}"; shift || true
+PART="${1:-bracket}"; shift || true
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad}"
 OUT_DIR="${ROOT}/dist"
