@@ -222,29 +222,39 @@ module bracket(
     // Seamless wrap-around rim ("rails" retention): one continuous rounded wall
     // around the cabinet pocket — tall side rails (`rail_h`), a low front lip
     // (`lip_hh`), and a rear heel (`rear_heel_h`) with a central cable notch.
-    // Built from a single rect_tube so the corners are fused, then the front and
-    // rear are stepped down and the cable gap cut out.
+    // Built from a single rect_tube (fused corners), then the top edge is carved
+    // to a ramped profile: the front lip rises at 45 deg into the side rails and
+    // the rails fall at 45 deg into the rear heel, so the whole rim top flows.
     module _rim() {
         ow = speaker_w + 2 * cabinet_clearance + 2 * rail_t;   // outer width
         od = shelf_d;                                          // front edge..rear edge
         irad = max(0.1, corner_r - rail_t);
         front_inner = -shelf_d + rail_t;     // inner face of the front lip
         rear_inner  = -rail_t;               // inner face of the rear heel
+        fr = rail_h - lip_hh;                // 45 deg front ramp (rise = run)
+        rr = rail_h - rear_heel_h;           // 45 deg rear ramp
+        top = rail_h + 10;
+        // Top-edge cut profile in (y, z): low across the front lip, ramping up to
+        // the side rails, holding, then ramping down to the rear heel.
+        profile = rear_heel
+            ? [[-shelf_d - 1, lip_hh], [front_inner, lip_hh],
+               [front_inner + fr, rail_h], [rear_inner - rr, rail_h],
+               [rear_inner, rear_heel_h], [1, rear_heel_h], [1, top], [-shelf_d - 1, top]]
+            : [[-shelf_d - 1, lip_hh], [front_inner, lip_hh],
+               [front_inner + fr, rail_h], [1, rail_h], [1, top], [-shelf_d - 1, top]];
         difference() {
             translate([0, -shelf_d / 2, -1])
                 rect_tube(h = rail_h + 1, size = [ow, od], wall = rail_t,
                           rounding = corner_r, irounding = irad, anchor = BOTTOM);
-            // step the front edge down to the lip height
-            translate([-(ow / 2 + 1), -shelf_d - 1, lip_hh])
-                cube([ow + 2, rail_t + 1, rail_h + 3]);
-            if (rear_heel) {
-                // step the rear edge down to the heel height
-                translate([-(ow / 2 + 1), rear_inner, rear_heel_h])
-                    cube([ow + 2, rail_t + 1, rail_h + 3]);
+            // carve the ramped top profile across the full width
+            rotate([0, 0, 90]) rotate([90, 0, 0])
+                linear_extrude(height = ow + 4, center = true)
+                    polygon(profile);
+            if (rear_heel)
                 // central cable notch through the rear heel
                 translate([-rear_heel_notch_w / 2, rear_inner - 2, -2])
                     cube([rear_heel_notch_w, rail_t + 3, rail_h + 5]);
-            } else {
+            else {
                 // open back: drop the rear wall but keep the side rails full-length
                 inner_half = ow / 2 - rail_t;
                 translate([-inner_half, rear_inner, -2])
