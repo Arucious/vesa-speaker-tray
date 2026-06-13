@@ -18,6 +18,9 @@ jobs:
 
       - name: Install OpenSCAD snapshot
         run: |
+          # GL runtime libs the AppImage links against (headless runner lacks them)
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libegl1 libopengl0 libglu1-mesa libgl1
           curl -fsSLO "https://files.openscad.org/snapshots/${OPENSCAD_SNAPSHOT}"
           chmod +x "${OPENSCAD_SNAPSHOT}"
           ./"${OPENSCAD_SNAPSHOT}" --appimage-extract > /dev/null
