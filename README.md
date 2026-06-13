@@ -26,9 +26,20 @@ src/
   pads.scad             tpu_pads() — separately printed TPU 95A pads (0.3mm press fit, 1mm proud)
   assembly.scad         demo_assembly() — bracket + pads + translucent speaker bounding box
 scripts/render.sh       render a Part to dist/*.stl
+scripts/build_single_file.py  flatten src/ -> vesa_tray_generator_single.scad (MakerWorld)
 tests/                  pytest + trimesh watertightness / acceptance / VESA-fit checks
 docs/                   the design spec (source of truth)
 ```
+
+## MakerWorld (single-file generator)
+
+MakerWorld's Parametric Model Maker accepts only **one** `.scad` file and provides
+BOSL2 itself. Develop in the multi-file `src/` layout; upload the flattened
+[`vesa_tray_generator_single.scad`](vesa_tray_generator_single.scad) (regenerate
+with `python scripts/build_single_file.py`). It inlines all of `src/`, keeps only
+`include <BOSL2/std.scad>`, and is render-identical to the multi-file source (a
+test enforces this). The "Speaker — START HERE" group (width / depth / weight) is
+all most users need to touch.
 
 ## Parts
 
