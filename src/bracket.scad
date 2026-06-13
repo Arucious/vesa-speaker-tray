@@ -224,7 +224,8 @@ module bracket(
     // shelf and the lip, and stopped 1mm shy of the rear edge, so no union face
     // is tangent or coplanar with an exterior face.
     module _rails() {
-        y_rear  = -(lip_t + 1);              // stop just forward of the rear heel
+        y_rear  = 0;                         // reach the rear edge so the rail
+                                             // lands on the bed (no floating end)
         y_front = -(shelf_d - lip_t + 1);    // bury 1mm into the front lip
         len = y_rear - y_front;
         for (sx = [-1, 1])
