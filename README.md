@@ -41,6 +41,37 @@ with `python scripts/build_single_file.py`). It inlines all of `src/`, keeps onl
 test enforces this). The "Speaker — START HERE" group (width / depth / weight) is
 all most users need to touch.
 
+**Grab the upload file from the [latest release](../../releases/latest)** instead
+of building locally — each release attaches the ready-to-upload
+`vesa_tray_generator_single.scad`.
+
+## Releases & CI
+
+Two GitHub Actions workflows ([`​.github/workflows/`](.github/workflows)):
+
+- **`ci.yml`** — on every push and pull request: installs the pinned toolchain
+  (OpenSCAD 2026.01.14 + BOSL2, see `OPENSCAD_SETUP.md`) and runs `pytest`. The
+  suite also checks that `vesa_tray_generator_single.scad` is **in sync with
+  `src/`** and renders identically, so the upload file can't silently go stale.
+- **`release.yml`** — on a `vX.Y.Z` tag: rebuilds the single file, fails if it is
+  stale, then creates a GitHub Release with `vesa_tray_generator_single.scad`
+  attached as the upload artifact.
+
+Cut a release:
+
+```sh
+# after committing any src/ change, regenerate + commit the single file first:
+python scripts/build_single_file.py
+git add vesa_tray_generator_single.scad && git commit -m "rebuild single file"
+
+# then tag and push — the release (with the .scad asset) is created automatically:
+git tag -a v1.1.0 -m "what changed"
+git push origin v1.1.0
+```
+
+Tags are `vMAJOR.MINOR.PATCH`. If you forget to rebuild the single file, both the
+CI test and the release job fail loudly rather than shipping a stale artifact.
+
 ## Parts
 
 Select with the `Part` variable (OpenSCAD Customizer) or `-D Part=...`:
