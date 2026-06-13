@@ -1,0 +1,42 @@
+name: Release
+
+# Publish the flattened MakerWorld upload file as a GitHub Release whenever a
+# version tag (vX.Y.Z) is pushed.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Rebuild the single file and confirm it is in sync
+        run: |
+          python scripts/build_single_file.py
+          if ! git diff --quiet -- vesa_tray_generator_single.scad; then
+            echo "::error::vesa_tray_generator_single.scad is stale — run scripts/build_single_file.py and commit before tagging."
+            exit 1
+          fi
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            vesa_tray_generator_single.scad \
+            --title "${GITHUB_REF_NAME}" \
+            --notes "Single-file OpenSCAD generator for the MakerWorld Parametric Model Maker.
+
+          **Upload \`vesa_tray_generator_single.scad\` to MakerWorld** — it is the only file you need. BOSL2 is provided by the platform.
+
+          For most speakers you only set Speaker **width** and **depth** (and weight, for the print-setting hint); everything else auto-sizes. See the README for wiring, fasteners, and the walls/infill table."
