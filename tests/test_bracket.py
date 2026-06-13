@@ -36,11 +36,15 @@ def test_through_fastening_watertight():
 
 @requires_openscad
 def test_rails_and_hook_watertight():
-    # Rails need a wider shelf than the 150 default (asserted in-SCAD).
-    mesh = load_mesh(
-        {"retention_style": "rails", "shelf_w": 162, "cable_hook": True},
-        part="bracket",
-    )
+    # Rails + rear heel + cable hook (rails are the default; add the hook).
+    mesh = load_mesh({"cable_hook": True}, part="bracket")
+    assert mesh.is_watertight
+
+
+@requires_openscad
+def test_lip_only_watertight():
+    # The simplest retention path must still close up.
+    mesh = load_mesh({"retention_style": "lip", "rear_heel": False}, part="bracket")
     assert mesh.is_watertight
 
 
@@ -59,25 +63,26 @@ def test_assembly_renders():
 
 @requires_openscad
 def test_bracket_envelope():
-    # Whole part lives where the spec says: shelf top at z=0, lip above it,
-    # plate down to -plate_h, shelf out to -shelf_d, plate rear face at y=0.
+    # Whole part lives where the spec says: shelf top at z=0, tallest retention
+    # above it, plate down to -plate_h, shelf out to -shelf_d, rear face at y=0.
     mesh = load_mesh(part="bracket")
     (xmin, ymin, zmin), (xmax, ymax, zmax) = mesh.bounds
-    assert abs(zmax - 7.0) < 0.2, f"lip top at {zmax}, expected lip_h+pad_proud=7"
+    assert abs(zmax - 35.0) < 0.2, f"top at {zmax}, expected rail_h=35"
     assert abs(zmin + 130.0) < 0.2, f"plate bottom at {zmin}, expected -plate_h=-130"
     assert abs(ymax) < 0.2, f"rear face at {ymax}, expected y=0"
-    assert abs(ymin + 180.0) < 0.2, f"front edge at {ymin}, expected -shelf_d=-180"
-    assert abs(xmax - 75.0) < 0.2 and abs(xmin + 75.0) < 0.2, "shelf width != 150"
+    assert abs(ymin + 216.0) < 0.2, f"front edge at {ymin}, expected -shelf_d=-216"
+    assert abs(xmax - 80.0) < 0.2 and abs(xmin + 80.0) < 0.2, "shelf width != 160"
 
 
 @requires_openscad
 def test_lip_retains_at_front():
-    # Material above the shelf top must exist only in the lip band at the front.
-    mesh = load_mesh({"retention_style": "lip"}, part="bracket")
+    # With lip-only retention, material above the shelf top exists only in the
+    # front lip band.
+    mesh = load_mesh({"retention_style": "lip", "rear_heel": False}, part="bracket")
     v = mesh.vertices
     above = v[v[:, 2] > 0.5]
     assert len(above), "no lip material above the shelf top"
-    assert above[:, 1].max() < -180 + 4 + 0.1, "material above shelf top outside the lip band"
+    assert above[:, 1].max() < -216 + 4 + 0.1, "material above shelf top outside the lip band"
 
 
 @requires_openscad

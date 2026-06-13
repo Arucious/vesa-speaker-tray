@@ -48,9 +48,9 @@ speaker_h = 237;
 cabinet_clearance = 0.5;
 
 /* [Shelf] */
-shelf_w = 150;
-// Less than speaker_d on purpose: the cabinet overhangs the rear, above the arm head
-shelf_d = 180;
+shelf_w = 160;
+// Supports the full cabinet depth so the rear heel can contact it
+shelf_d = 216;
 shelf_t = 7;
 // EFFECTIVE retention height above the pad top
 lip_h = 6;
@@ -100,8 +100,15 @@ lip_pad_recess = true;
 
 /* [Retention] */
 // lip = front lip only; strap = lip + velcro slots; rails = lip + side rails
-retention_style = "strap"; // [lip, strap, rails]
+retention_style = "rails"; // [lip, strap, rails]
 rail_t = 4;
+// Side-rail height above the shelf top
+rail_h = 35;
+// Low rear stop behind the cabinet (needs the shelf to support the full depth)
+rear_heel = true;
+rear_heel_h = 25;
+// Central cable gap in the rear heel
+rear_heel_notch_w = 40;
 
 /* [Extras] */
 // Eyelet tab below the plate for a cable loop
@@ -129,7 +136,9 @@ if (Part == "bracket")
             pad_recess_depth = pad_recess_depth, pad_recess_w = pad_recess_w,
             pad_count = pad_count, pad_proud = pad_proud,
             lip_pad_recess = lip_pad_recess,
-            retention_style = retention_style, rail_t = rail_t,
+            retention_style = retention_style, rail_t = rail_t, rail_h = rail_h,
+            rear_heel = rear_heel, rear_heel_h = rear_heel_h,
+            rear_heel_notch_w = rear_heel_notch_w,
             cable_hook = cable_hook, corner_r = corner_r,
             mirror_part = mirror_part);
 else if (Part == "pads")
@@ -156,6 +165,8 @@ else if (Part == "assembly")
                   pad_recess_w = pad_recess_w, pad_count = pad_count,
                   pad_proud = pad_proud, lip_pad_recess = lip_pad_recess,
                   retention_style = retention_style, rail_t = rail_t,
+                  rail_h = rail_h, rear_heel = rear_heel,
+                  rear_heel_h = rear_heel_h, rear_heel_notch_w = rear_heel_notch_w,
                   cable_hook = cable_hook, corner_r = corner_r,
                   mirror_part = mirror_part);
 else

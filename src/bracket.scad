@@ -16,8 +16,8 @@ module bracket(
     speaker_w        = 145,
     speaker_d        = 207,
     cabinet_clearance= 0.5,
-    shelf_w          = 150,
-    shelf_d          = 180,
+    shelf_w          = 160,
+    shelf_d          = 216,   // supports the full cabinet depth (rear heel needs this)
     shelf_t          = 7,
     lip_h            = 6,
     lip_t            = 4,
@@ -44,8 +44,12 @@ module bracket(
     pad_count        = 3,
     pad_proud        = 1,
     lip_pad_recess   = true,
-    retention_style  = "strap",    // "lip" | "strap" | "rails"
+    retention_style  = "rails",    // "lip" | "strap" | "rails"
     rail_t           = 4,
+    rail_h           = 35,         // side-rail height above the shelf top
+    rear_heel        = true,       // low rear stop behind the cabinet
+    rear_heel_h      = 25,
+    rear_heel_notch_w= 40,         // central cable gap in the rear heel
     cable_hook       = false,
     corner_r         = 6,
     mirror_part      = false
@@ -68,9 +72,14 @@ module bracket(
     assert(rails_fit(retention_style, speaker_w, cabinet_clearance, rail_t, shelf_w),
            "Side rails fall off the shelf: grow shelf_w or shrink rail_t");
 
-    echo(str("rear_overhang = ",
-             rear_overhang(speaker_d, cabinet_clearance, shelf_d, lip_t),
+    ovh = rear_overhang(speaker_d, cabinet_clearance, shelf_d, lip_t);
+    echo(str("rear_overhang = ", ovh,
              "mm past the plate rear face (keep the arm head below the cabinet)"));
+    if (rear_heel && ovh > 1)
+        echo(str("WARNING: rear_heel is on but the cabinet overhangs the shelf by ",
+                 ovh, "mm, so the heel sits under the cabinet and won't contact ",
+                 "its rear face. Deepen shelf_d to ~",
+                 speaker_d + cabinet_clearance + lip_t * 2, "mm."));
 
     if (mirror_part) mirror([1, 0, 0]) _body();
     else _body();
@@ -86,6 +95,7 @@ module bracket(
                 _lip();
                 if (fastening == "insert") _insert_bosses();
                 if (retention_style == "rails") _rails();
+                if (rear_heel) _rear_heel();
                 if (cable_hook) _cable_eyelet();
             }
             _vesa_holes();
@@ -210,17 +220,32 @@ module bracket(
         }
     }
 
-    // Side rails: low walls flanking the cabinet, same height as the lip.
-    // Buried 1mm into the shelf and the lip, and stopped 1mm shy of the rear
-    // edge, so no union face is tangent or coplanar with an exterior face.
+    // Side rails: walls flanking the cabinet, `rail_h` tall. Buried 1mm into the
+    // shelf and the lip, and stopped 1mm shy of the rear edge, so no union face
+    // is tangent or coplanar with an exterior face.
     module _rails() {
-        len = shelf_d - lip_t;           // 1mm into the lip, 1mm shy of the rear
+        y_rear  = -(lip_t + 1);              // stop just forward of the rear heel
+        y_front = -(shelf_d - lip_t + 1);    // bury 1mm into the front lip
+        len = y_rear - y_front;
         for (sx = [-1, 1])
             translate([sx * (speaker_w / 2 + cabinet_clearance + rail_t / 2),
-                       -len / 2 - 1, -1])
-                cuboid([rail_t, len, lip_hh + 1],
+                       (y_rear + y_front) / 2, -1])
+                cuboid([rail_t, len, rail_h + 1],
                        rounding = min(1.9, rail_t / 2 - 0.1), edges = "Z",
                        anchor = BOTTOM);
+    }
+
+    // Rear heel: two posts at the shelf rear edge, behind the cabinet, that stop
+    // it sliding/tipping backward off the open rear. A central notch
+    // (rear_heel_notch_w) lets the speaker's cables pass through and drop down
+    // the arm side of the plate.
+    module _rear_heel() {
+        pw = (shelf_w - 2 * corner_r - rear_heel_notch_w) / 2;
+        if (pw > 1)
+            for (sx = [-1, 1])
+                translate([sx * (rear_heel_notch_w / 2 + pw / 2),
+                           -lip_t / 2, -1])
+                    cube([pw, lip_t, rear_heel_h + 1], anchor = BOTTOM);
     }
 
     // Rounded eyelet tab below the plate, flush with the REAR face (prints flat

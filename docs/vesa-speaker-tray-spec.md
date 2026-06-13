@@ -25,11 +25,22 @@ orientation (plate vertical).
 
 The cabinet is rear-ported and the active speaker's I/O (power, RCA/optical,
 knobs) is on the rear face, with connectors protruding 20–40 mm. A plate behind
-the cabinet would block them or force a large standoff (more cantilever moment).
-Putting the plate entirely below the shelf leaves the rear face of the speaker
-in open air. The cabinet may overhang the shelf's rear edge, *above* the arm
-head — this deliberate underhang reduces the cantilever moment (speaker centroid
-≈ 70 mm forward of the plate instead of ≈ 105 mm).
+the cabinet would block them or force a large standoff. Putting the plate
+entirely below the shelf keeps the rear face clear; cables exit the rear, pass
+through the central notch in the rear heel, and drop down the arm side of the
+plate (gathered by the optional cable hook).
+
+### Retention vs. overhang (resolved: full support + rear heel)
+
+An earlier revision ran a shelf shallower than the cabinet so the rear
+overhung into open air (less cantilever moment, cables drop freely). That
+precludes a rear stop — there's no shelf behind the cabinet to mount one — and
+a strap-over-the-top is impractical for a 237 mm cabinet. This revision instead
+supports the **full** cabinet depth and captures it on all sides: front lip +
+side rails + a rear heel (with a cable notch). The cost is a deeper shelf and a
+larger cantilever moment (centroid ≈ 105 mm forward of the plate ⇒ ≈ 3.7 N·m at
+3.5 kg), still well within the gusset/insert capacity; creep, not strength,
+remains the design driver.
 
 ## Coordinate convention
 
@@ -41,8 +52,8 @@ head — this deliberate underhang reduces the cantilever moment (speaker centro
 
 ## Load case (sets defaults; not enforced in code)
 
-- Static: 3.5 kg per bracket (active S880DB ≈ 3.4 kg), centroid ≈ 70 mm forward
-  of the plate → tipping moment ≈ 2.5 N·m → top-screw tension ≈ 13 N/screw at
+- Static: 3.5 kg per bracket (active S880DB ≈ 3.4 kg), centroid ≈ 105 mm forward
+  of the plate → tipping moment ≈ 3.7 N·m → top-screw tension ≈ 19 N/screw at
   100 mm spacing. Trivial for the inserts; **creep deflection of the cantilevered
   shelf governs** — the gussets are the primary anti-creep feature; do not omit
   or shrink them.
@@ -58,15 +69,15 @@ head — this deliberate underhang reduces the cantilever moment (speaker centro
 | `speaker_d` | 207 | Cabinet depth |
 | `speaker_h` | 237 | Cabinet height (assembly ghost + strap sizing only) |
 | `cabinet_clearance` | 0.5 | Gap between cabinet and lip/rails faces |
-| `shelf_w` | 150 | Shelf width |
-| `shelf_d` | 180 | Shelf depth. < `speaker_d` on purpose (see underhang note) |
+| `shelf_w` | 160 | Shelf width (must clear the cabinet + side rails) |
+| `shelf_d` | 216 | Shelf depth. Supports the full cabinet so the rear heel contacts it |
 | `shelf_t` | 7 | Shelf thickness (6–8) |
 | `lip_h` | 6 | **Effective** lip height above the pad top (5–8) |
 | `lip_t` | 4 | Lip thickness |
 | `plate_w` | 130 | VESA plate width (≥ 120 to cover both patterns) |
 | `plate_h` | 130 | VESA plate height |
 | `plate_t` | 8 | VESA plate thickness (6–8) |
-| `vesa_drop` | 70 | Shelf top → VESA square center. Raise it if your arm head is tall: the head must stay below the cabinet's rear overhang |
+| `vesa_drop` | 70 | Shelf top → VESA square center. Raise it if your arm head is tall so it clears the underside of the shelf |
 | `vesa_pattern` | 100 | 100 or 75 |
 | `fastening` | "insert" | "insert" = Ruthex heat-set, blind; "through" = M4 through-bolt + front hex-nut trap |
 | `insert_d` | 5.6 | Ruthex RX-M4 pilot bore — Ø5.6 per datasheet (NOT 4.0; 4.0 is the screw) |
@@ -86,8 +97,12 @@ head — this deliberate underhang reduces the cantilever moment (speaker centro
 | `pad_count` | 3 | Strips across the cabinet footprint |
 | `pad_proud` | 1 | How far pads stand above the shelf top |
 | `lip_pad_recess` | true | 1 mm TPU recess on the lip inner face |
-| `retention_style` | "strap" | "lip", "strap" (lip + 2 velcro slots), or "rails" (lip + side rails) |
+| `retention_style` | "rails" | "lip", "strap" (lip + 2 velcro slots), or "rails" (lip + side rails) |
 | `rail_t` | 4 | Side-rail thickness ("rails" mode) |
+| `rail_h` | 35 | Side-rail height above the shelf top ("rails" mode) |
+| `rear_heel` | true | Low rear stop behind the cabinet (needs full-depth shelf) |
+| `rear_heel_h` | 25 | Rear-heel height; keep below the cabinet's rear I/O panel |
+| `rear_heel_notch_w` | 40 | Central cable gap in the rear heel |
 | `cable_hook` | false | Eyelet tab below the plate for a cable loop/velcro |
 | `corner_r` | 6 | Outer rounding (shelf corners, plate bottom corners) |
 | `mirror_part` | false | Mirror about X |
@@ -95,7 +110,8 @@ head — this deliberate underhang reduces the cantilever moment (speaker centro
 Derived (functions in `src/params.scad`):
 - `shelf_usable_d = shelf_d - lip_t` (lip inner face → shelf rear edge)
 - `rear_overhang = speaker_d + lip_t + cabinet_clearance - shelf_d`
-  (how far the cabinet hangs past the plate's rear face; ≈ 31.5 mm at defaults)
+  (cabinet past the plate's rear face; ≤ 0 at defaults = fully supported. If
+  positive, `bracket()` warns that the rear heel won't reach the cabinet.)
 - `lip_total_h = lip_h + pad_proud` (physical lip height above the shelf top)
 
 ## Geometry description
@@ -118,9 +134,12 @@ Derived (functions in `src/params.scad`):
    ("through"): Ø`vesa_hole_d` through-bores with hex-nut traps on the front face.
 6. **Front lip** at the shelf's front edge, physical height `lip_h + pad_proud`
    so the *effective* retention above the pad top is `lip_h`.
-7. **Retention**: "strap" adds two 25×4 slots through the shelf (velcro loop
-   around the cabinet's lower body); "rails" adds side walls at
-   `speaker_w/2 + cabinet_clearance` per side, same height as the lip.
+7. **Retention**: a front lip is always present. "rails" (default) adds side
+   walls `rail_h` tall at `speaker_w/2 + cabinet_clearance` per side; "strap"
+   adds two velcro slots (legacy — impractical for a tall cabinet); "lip" is
+   front-only. Independently, `rear_heel` adds two posts at the shelf's rear
+   edge behind the cabinet, with a central `rear_heel_notch_w` cable gap. Lip +
+   rails + heel capture the cabinet on all sides (drop-in from the top).
 8. **Pads**: `pad_count` recessed strips across the cabinet footprint; separately
    printed TPU 95A pads press in 0.3 mm undersized and stand `pad_proud` above
    the shelf. Print pads with low infill / few top layers for compliance (95A is
@@ -157,5 +176,5 @@ Derived (functions in `src/params.scad`):
 3. M4 bolts on the chosen VESA pattern pass through the rear-face pockets/bores
    (empty intersection); a 6 mm-misaligned pattern collides (fit test discriminates).
 4. Insert pockets are blind; an over-deep pocket fails the render loudly.
-5. The cabinet ghost in `demo_assembly()` clears lip/rails by `cabinet_clearance`
-   and its rear face hangs `rear_overhang` past the plate, above the arm head.
+5. The cabinet ghost in `demo_assembly()` clears the lip/rails by
+   `cabinet_clearance` and its rear face seats against the rear heel.
