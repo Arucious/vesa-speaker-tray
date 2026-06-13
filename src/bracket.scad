@@ -92,10 +92,9 @@ module bracket(
                 _shelf();
                 _junction_fillet();
                 _gussets();
-                _lip();
                 if (fastening == "insert") _insert_bosses();
-                if (retention_style == "rails") _rails();
-                if (rear_heel) _rear_heel();
+                if (retention_style == "rails") _rim();   // seamless wrap-around
+                else _lip();                              // "lip" / "strap"
                 if (cable_hook) _cable_eyelet();
             }
             _vesa_holes();
@@ -220,33 +219,38 @@ module bracket(
         }
     }
 
-    // Side rails: walls flanking the cabinet, `rail_h` tall. Buried 1mm into the
-    // shelf and the lip, and stopped 1mm shy of the rear edge, so no union face
-    // is tangent or coplanar with an exterior face.
-    module _rails() {
-        y_rear  = 0;                         // reach the rear edge so the rail
-                                             // lands on the bed (no floating end)
-        y_front = -(shelf_d - lip_t + 1);    // bury 1mm into the front lip
-        len = y_rear - y_front;
-        for (sx = [-1, 1])
-            translate([sx * (speaker_w / 2 + cabinet_clearance + rail_t / 2),
-                       (y_rear + y_front) / 2, -1])
-                cuboid([rail_t, len, rail_h + 1],
-                       rounding = min(1.9, rail_t / 2 - 0.1), edges = "Z",
-                       anchor = BOTTOM);
-    }
-
-    // Rear heel: two posts at the shelf rear edge, behind the cabinet, that stop
-    // it sliding/tipping backward off the open rear. A central notch
-    // (rear_heel_notch_w) lets the speaker's cables pass through and drop down
-    // the arm side of the plate.
-    module _rear_heel() {
-        pw = (shelf_w - 2 * corner_r - rear_heel_notch_w) / 2;
-        if (pw > 1)
-            for (sx = [-1, 1])
-                translate([sx * (rear_heel_notch_w / 2 + pw / 2),
-                           -lip_t / 2, -1])
-                    cube([pw, lip_t, rear_heel_h + 1], anchor = BOTTOM);
+    // Seamless wrap-around rim ("rails" retention): one continuous rounded wall
+    // around the cabinet pocket — tall side rails (`rail_h`), a low front lip
+    // (`lip_hh`), and a rear heel (`rear_heel_h`) with a central cable notch.
+    // Built from a single rect_tube so the corners are fused, then the front and
+    // rear are stepped down and the cable gap cut out.
+    module _rim() {
+        ow = speaker_w + 2 * cabinet_clearance + 2 * rail_t;   // outer width
+        od = shelf_d;                                          // front edge..rear edge
+        irad = max(0.1, corner_r - rail_t);
+        front_inner = -shelf_d + rail_t;     // inner face of the front lip
+        rear_inner  = -rail_t;               // inner face of the rear heel
+        difference() {
+            translate([0, -shelf_d / 2, -1])
+                rect_tube(h = rail_h + 1, size = [ow, od], wall = rail_t,
+                          rounding = corner_r, irounding = irad, anchor = BOTTOM);
+            // step the front edge down to the lip height
+            translate([-(ow / 2 + 1), -shelf_d - 1, lip_hh])
+                cube([ow + 2, rail_t + 1, rail_h + 3]);
+            if (rear_heel) {
+                // step the rear edge down to the heel height
+                translate([-(ow / 2 + 1), rear_inner, rear_heel_h])
+                    cube([ow + 2, rail_t + 1, rail_h + 3]);
+                // central cable notch through the rear heel
+                translate([-rear_heel_notch_w / 2, rear_inner - 2, -2])
+                    cube([rear_heel_notch_w, rail_t + 3, rail_h + 5]);
+            } else {
+                // open back: drop the rear wall but keep the side rails full-length
+                inner_half = ow / 2 - rail_t;
+                translate([-inner_half, rear_inner, -2])
+                    cube([2 * inner_half, rail_t + 1, rail_h + 5]);
+            }
+        }
     }
 
     // Rounded eyelet tab below the plate, flush with the REAR face (prints flat
