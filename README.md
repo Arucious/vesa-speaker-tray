@@ -101,6 +101,72 @@ Most-used: `speaker_w` / `speaker_d`, `shelf_w` / `shelf_d`, `vesa_pattern`,
 (`insert`/`through`), `retention_style` (`lip`/`strap`/`rails`), `lip_h`,
 `pad_recess_depth`, `gusset_count`, `cable_hook`.
 
+## Design rationale (the physics)
+
+Why the bracket is shaped the way it is — the reasoning behind each decision,
+not just the result.
+
+**Vertical plate, not a tray on top.** The obvious design is a tray that bolts to
+an upward-facing VESA head. But a monitor arm's tilt joint can't usually rotate
+the head to face the ceiling — the Secretlab MAGNUS tops out at **+70°** — so that
+tray could never mount. Keeping the plate vertical uses the arm in its normal
+orientation, and the tilt joint sees the same ~3.6 N·m whether the plate is
+vertical or horizontal (the moment comes from the speaker's offset mass, not the
+plate's angle), so nothing is lost by staying vertical.
+
+**Plate below the shelf, not behind the cabinet.** The cabinet is rear-ported with
+its I/O on the back, connectors protruding 20–40 mm. A plate *behind* the speaker
+would block them or need a tall standoff (which lengthens the moment arm). Putting
+the plate entirely *below* the shelf keeps the rear face in open air; cables exit
+the back, drop through the rear-heel notch, and run down the arm.
+
+**The load case.** A ~3.5 kg speaker with its mass centroid ~105 mm forward of the
+plate is a cantilever: **moment ≈ 3.6 N·m** at the root. That resolves to ~18 N of
+tension on the top fastener pair (trivial — heat-set M4 inserts pull out above
+~1000 N) and a peak **sustained material stress of ~0.26 MPa** in the structure.
+
+**Creep governs, not breaking.** PETG won't *fracture* here — 0.26 MPa is ~190×
+below its ~50 MPa yield. The real long-term risk for any plastic under constant
+load is **creep** (slow cold-flow sag), which becomes significant above roughly
+**10 MPa** sustained. At 0.26 MPa we're ~40× under that, so the shelf holds its
+shape for years rather than drooping. This is *why* the design leans on geometry
+(deep gussets) instead of dense infill — see [Print strength](#print-strength-walls--infill).
+
+**Gussets are the structure.** A 5 mm-thick gusset that's 123 mm deep at the root
+has a huge section modulus, so it carries the cantilever moment at near-zero
+stress. They're the primary anti-sag feature — the spec forbids shrinking or
+omitting them. The shelf itself barely bends because the gussets support it along
+nearly its full depth.
+
+**Full-depth shelf (a deliberate trade-off).** An earlier version ran the shelf
+shorter than the cabinet so the rear overhung into open air — that lowered the
+moment (~2.5 N·m) and let cables drop freely. But it leaves nothing behind the
+speaker to stop it tipping backward, and a strap over a 237 mm-tall cabinet is
+impractical. Supporting the full depth raises the moment to ~3.6 N·m (still ~40×
+under creep) and buys a **rear heel** for positive containment — a worthwhile
+trade.
+
+**Retention by capture, not friction.** A tall speaker on a smooth shelf is one
+bump from the floor. The seamless rim (front lip + tall side rails + rear heel)
+captures the cabinet on all sides so it's mechanically retained, not just resting
+on pad friction. The strap-through-slots idea was abandoned: the slots sat *under*
+the cabinet (it covered them), and no reasonable strap loops a 237 mm cabinet.
+
+**Print orientation is part of the engineering.** Printed **plate-rear-face down**,
+the gussets are in-plane triangles and the bending load runs favorably relative to
+the layers — so layer adhesion (FDM's weak axis) isn't the limiting factor (and at
+0.26 MPa there's still ~100× margin even across layers). The 45° rim ramps and the
+rails reaching the bed keep it **support-free** in exactly this orientation.
+
+**Walls beat infill.** For a part like this the load is carried in the solid
+shell's section modulus, not the infill core, so wall count matters far more than
+density. The print-setting recommendation adds walls before infill as weight rises.
+
+**Fasteners.** Screws load mostly in shear, the top pair in light tension; a relief
+counterbore around each insert keeps heat-set squeeze-out below flush so the arm's
+VESA plate still seats flat. Use wave washers or nylon-patch screws against
+vibration — **never liquid threadlocker on PETG** (it crazes the plastic).
+
 ## Hardware
 
 - 4× M4×10–12 machine screws (the arm's stock VESA screws) with **wave/spring
